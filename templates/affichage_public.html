@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta http-equiv="refresh" content="60">
+    <meta charset="utf-8" />
+    <title>Scores Public - Jeux du Robot - Thème Unearthed Animé</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: 'Montserrat', sans-serif;
+            color: #3e372f;
+        }
+
+        /* Canvas en fond */
+        #sandstorm {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            background: linear-gradient(135deg, #b1a07a, #7e7058);
+        }
+
+        /* Contenu par dessus */
+        .content {
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            min-height: 100vh;
+            background: transparent;
+        }
+
+        h2 {
+            color: #e0d8c3;
+            text-shadow: 1px 1px 2px #5c4b3b;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .table-container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin: 0 auto;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        table {
+            width: 48%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #f4f1ea;
+            border-radius: 12px;
+            box-shadow:
+                0 4px 6px rgba(0, 0, 0, 0.1),
+                inset 0 0 10px #c7b997;
+            color: #4a422a;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.2rem;
+            text-align: center;
+        }
+
+        th {
+            background-color: #7e7058;
+            color: #f4f1ea;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            box-shadow: inset 0 -3px 6px #a9946e;
+        }
+
+        tr:nth-child(even) {
+            background-color: #e9e6dc;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #f4f1ea;
+        }
+
+        tr:hover {
+            background-color: #c7b997;
+            color: #3e372f;
+            cursor: default;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .table-container {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            table {
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        #clock {
+            position: fixed;
+            bottom: 5%;
+            right: 10%;
+            font-size: 250%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 1% 2%;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="sandstorm"></canvas>
+
+    <div class="content">
+        <h2>Scores des Équipes - Jeux du Robot</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom Équipe</th>
+                        <th>Score 1</th>
+                        <th>Score 2</th>
+                        <th>Score 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipe in equipes[:equipes|length//2] %}
+                        {% if equipe.jeux_du_robot %}
+                            {% for jeu in equipe.jeux_du_robot %}
+                            <tr>
+                                <td>{{ equipe.nom }}</td>
+                                <td>{{ jeu.score1 }}</td>
+                                <td>{{ jeu.score2 }}</td>
+                                <td>{{ jeu.score3 }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>{{ equipe.nom }}</td>
+                                <td colspan="3" class="text-muted">Pas de scores</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom Équipe</th>
+                        <th>Score 1</th>
+                        <th>Score 2</th>
+                        <th>Score 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipe in equipes[equipes|length//2:] %}
+                        {% if equipe.jeux_du_robot %}
+                            {% for jeu in equipe.jeux_du_robot %}
+                            <tr>
+                                <td>{{ equipe.nom }}</td>
+                                <td>{{ jeu.score1 }}</td>
+                                <td>{{ jeu.score2 }}</td>
+                                <td>{{ jeu.score3 }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>{{ equipe.nom }}</td>
+                                <td colspan="3" class="text-muted">Pas de scores</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="clock"></div>
+
+    <script>
+        // Heures
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+
+
+    <script>
+
+
+
+
+        // Particules de Sable
+        const canvas = document.getElementById('sandstorm');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(type) {
+                this.type = type; // 'small' ou 'big'
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.radius = this.type === 'small' ? (0.5 + Math.random() * 1.5) : (2 + Math.random() * 3);
+                this.speedX = 0.3 + Math.random() * 0.7;
+                this.speedY = this.type === 'small' ? (1 + Math.random() * 2) : (0.2 + Math.random() * 0.6);
+                this.alpha = this.type === 'small' ? (0.05 + Math.random() * 0.15) : (0.1 + Math.random() * 0.3);
+                this.angle = Math.random() * 2 * Math.PI;
+                this.angleSpeed = 0.01 + Math.random() * 0.02;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.angle += this.angleSpeed;
+
+                // Petit mouvement de oscillation horizontal (vent)
+                this.x += Math.sin(this.angle) * 0.5;
+
+                // Reboucle
+                if (this.x > width + this.radius) this.x = -this.radius;
+                if (this.y > height + this.radius) this.y = -this.radius;
+            }
+
+            draw() {
+                ctx.beginPath();
+                const colorSand = 'rgba(194, 178, 128,' + this.alpha + ')';
+                ctx.fillStyle = colorSand;
+                ctx.shadowColor = 'rgba(194, 178, 128, 0.8)';
+                ctx.shadowBlur = this.type === 'small' ? 3 : 6;
+                ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+
+        let particles = [];
+
+        function initParticles() {
+            particles = [];
+            // Beaucoup de petits grains qui tombent lentement
+            for (let i = 0; i < 150; i++) {
+                particles.push(new Particle('small'));
+            }
+            // Quelques grains plus gros qui flottent doucement
+            for (let i = 0; i < 25; i++) {
+                particles.push(new Particle('big'));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Légère superposition de dégradé pour effet poussière tourbillonnante
+            let gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, width / 1.5);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+            gradient.addColorStop(1, 'rgba(194, 178, 128, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+    </script>
+</body>
+
+</html>
